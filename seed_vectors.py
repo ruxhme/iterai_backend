@@ -1,7 +1,7 @@
 import os
 
 from dotenv import load_dotenv
-from sentence_transformers import SentenceTransformer
+from embeddings import embed
 from supabase import Client, create_client
 
 # 1. Setup Environment
@@ -13,11 +13,6 @@ if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
     raise ValueError("Missing Supabase admin credentials in .env")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-
-# 2. Load multilingual encoder
-print("Loading paraphrase-multilingual-MiniLM-L12-v2 model...")
-# Use the smarter, multilingual model!
-nlp_model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
 
 def generate_and_upload_embeddings():
     batch_size = 500
@@ -42,12 +37,12 @@ def generate_and_upload_embeddings():
         print(f"Processing batch of {len(records)} records...")
         
         titles = [record["Title"] for record in records]
-        vectors = nlp_model.encode(
-            titles,
-            batch_size=64,
-            normalize_embeddings=True,
-            show_progress_bar=False,
-        ).tolist()
+        raw_vectors = embed(titles)
+        # In case API returns list of lists or something nested strangely
+        if isinstance(raw_vectors, dict):
+            print(f"Error from HF API: {raw_vectors}")
+            break
+        vectors = raw_vectors
 
         # Batch upsert is significantly faster than row-by-row updates.
         updates = [

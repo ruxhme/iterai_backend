@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from langdetect import LangDetectException, detect
 from pydantic import BaseModel, Field
 from rapidfuzz import fuzz
-from sentence_transformers import SentenceTransformer
+from embeddings import embed
 from supabase import Client, create_client
 from supabase.lib.client_options import SyncClientOptions
 
@@ -53,10 +53,6 @@ semantic_supabase: Client = create_client(
 )
 title_index = TitleIndex()
 index_lock = RLock()
-
-print("Loading multilingual sentence model...")
-nlp_model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
-print("Model loaded.")
 
 
 @asynccontextmanager
@@ -239,7 +235,13 @@ def cached_verification_logic(title: str, language: str) -> VerificationResponse
     highest_ensemble_score = 0.0
     ensemble_reasons: List[str] = []
     try:
-        query_vector = nlp_model.encode(title, normalize_embeddings=True).tolist()
+        raw_vector = embed(title)
+        # HuggingFace might return [vector] instead of vector for single string
+        if isinstance(raw_vector, list) and len(raw_vector) > 0 and isinstance(raw_vector[0], list):
+            query_vector = raw_vector[0]
+        else:
+            query_vector = raw_vector
+            
         rpc_response = semantic_supabase.rpc(
             "match_titles",
             {

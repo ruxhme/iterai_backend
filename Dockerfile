@@ -8,13 +8,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 COPY requirements.txt requirements.txt
-# Force CPU-only PyTorch to avoid huge CUDA image layers on Railway.
 RUN pip install --upgrade pip && \
-    pip install --index-url https://download.pytorch.org/whl/cpu torch==2.5.1 && \
-    pip install -r requirements.txt && \
-    pip cache purge
+    pip install --no-cache-dir -r requirements.txt
 
-COPY main.py title_engine.py database.py seed_vectors.py ./
+COPY main.py title_engine.py database.py seed_vectors.py embeddings.py ./
 
 EXPOSE 8000
 
