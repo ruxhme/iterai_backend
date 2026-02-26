@@ -1,4 +1,4 @@
-# VERIFYXO Backend (Hackathon)
+# iterai_backend (VERIFYXO Backend)
 
 ## 1) Setup
 
