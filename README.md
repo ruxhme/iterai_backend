@@ -64,3 +64,13 @@ source venv/bin/activate
 pytest -q
 ruff check .
 ```
+
+## 5) Railway Deploy Notes
+
+- Keep `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` in Railway Variables.
+- This repo's Dockerfile installs **CPU-only** PyTorch so image size stays under free-plan limits.
+- Ensure Railway Start Command is empty (Dockerfile `CMD` is used), or set it to:
+
+```bash
+uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
+```
